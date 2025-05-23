@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<!-- タイトル画像をheadかh1の上に追加 -->
-<img src="omikujitop.jpg" alt="おみくじタイトル画像" style="width:38vw;max-width:400px;min-width:160px;margin-bottom:2vw;">
-
-  <head>
+<head>
   <meta charset="UTF-8">
   <title>おみくじルーレット</title>
   <style>
@@ -100,6 +97,9 @@
   </style>
 </head>
 <body>
+  <!-- ★TOP画像はbody直下、一番上！ -->
+  <img src="omikujitop.jpg" id="top-img" alt="おみくじタイトル画像" style="width:38vw;max-width:400px;min-width:160px;margin-bottom:2vw;">
+
   <button id="fullscreen-btn" onclick="openFullscreen()">全画面表示</button>
   <div id="container">
     <div id="result"></div>
@@ -139,20 +139,32 @@
     const img = document.getElementById('fortune-img');
     const showstaff = document.getElementById('showstaff');
     const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const topImg = document.getElementById('top-img');
 
-    // 初期状態
+    // 初期状態（トップ画像のみ・おみくじ画像非表示）
     showResult({text:"", img:"", comment:""});
     img.style.display = "none";
     result.textContent = "";
     comment.textContent = "";
     showstaff.style.visibility = "hidden";
 
+    // フルスクリーン自動化（ユーザーの初回操作でだけ発動するブラウザあり）
+    window.onload = function() {
+      showResult(fortunes[0], false); // TOP画像だけ表示、大吉画像で初期化も可
+      showstaff.style.visibility = "hidden";
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+      }
+    };
+
     // シャッフルルーレット
     let shuffleTimer = null;
     let shuffleCount = 0;
-    const shuffleMax = 20; // シャッフル回数（多いほどグルグル感）
+    const shuffleMax = 20; // シャッフル回数
 
     btn.onclick = function() {
+      // TOP画像を消す！
+      if (topImg) topImg.style.display = 'none';
       btn.disabled = true;
       showstaff.style.visibility = "hidden";
       shuffleCount = 0;
@@ -183,7 +195,7 @@
       comment.textContent = isShuffle ? "" : f.comment;
     }
 
-    // フルスクリーン関数
+    // フルスクリーンボタン（再度押した時用）
     function openFullscreen() {
       if (document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen();
@@ -196,3 +208,4 @@
   </script>
 </body>
 </html>
+
