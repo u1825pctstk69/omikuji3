@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>おみくじルーレット</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      width: 100vw; height: 100vh; min-height: 100vh;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100vw;
+      height: 100vh;
+    }
+    #result {
+      font-size: 6vw;
+      margin: 3vh 0 2vh 0;
+      font-weight: bold;
+      letter-spacing: 0.2em;
+      color: #bf003f;
+      text-shadow: 2px 2px 10px #eee;
+    }
+    #fortune-img {
+      width: 30vw; max-width: 350px; min-width: 160px; height: auto;
+      margin: 2vh auto 2vh auto;
+      display: block;
+      border-radius: 30px;
+      border: 5px solid #ff99bb;
+      box-shadow: 0 0 20px #ffb3d9;
+      background: #fff;
+      transition: filter 0.15s;
+    }
+    #comment {
+      font-size: 3vw;
+      color: #555;
+      margin-bottom: 4vh;
+      min-height: 4vw;
+      text-align: center;
+      font-weight: 500;
+    }
+    #draw-btn {
+      font-size: 2.5vw;
+      padding: 1vw 4vw;
+      margin-top: 1.5vh;
+      background: #ff99bb;
+      border: none;
+      border-radius: 2vw;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #ffd6eb;
+      transition: background 0.2s;
+    }
+    #draw-btn:active { background: #ff6699; }
+    #showstaff {
+      font-size: 2.2vw;
+      color: #bf003f;
+      font-weight: bold;
+      margin-top: 4vh;
+      text-shadow: 0 1px 2px #fff;
+      letter-spacing: 0.1em;
+    }
+    #fullscreen-btn {
+      position: fixed;
+      top: 2vw; right: 2vw;
+      z-index: 999;
+      font-size: 1.2vw;
+      padding: 0.6vw 2vw;
+      border-radius: 1vw;
+      border: 2px solid #ff99bb;
+      background: #fff;
+      color: #ff69b4;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    @media (max-width:600px) {
+      #fortune-img { width: 65vw; min-width: 120px; }
+      #result { font-size: 11vw; }
+      #comment { font-size: 6vw; }
+      #draw-btn { font-size: 5vw; padding: 2vw 10vw; }
+      #showstaff { font-size: 4vw; }
+    }
+  </style>
+</head>
+<body>
+  <button id="fullscreen-btn" onclick="openFullscreen()">全画面表示</button>
+  <div id="container">
+    <div id="result"></div>
+    <img id="fortune-img" src="" alt="おみくじ画像" style="display:none;">
+    <div id="comment"></div>
+    <button id="draw-btn">おみくじを引く！</button>
+    <div id="showstaff">スタッフに見せてね～！</div>
+  </div>
+  <script>
+    // おみくじデータ
+    const fortunes = [
+      {
+        text: "大吉",
+        img: "https://cdn.pixabay.com/photo/2017/01/31/16/23/smile-2020815_1280.png",
+        comment: "今日は絶好調！何やってもうまくいく予感♪"
+      },
+      {
+        text: "中吉",
+        img: "https://cdn.pixabay.com/photo/2013/07/12/15/55/star-150022_1280.png",
+        comment: "まずまずの運勢。少し背伸びすると良いことあるかも？"
+      },
+      {
+        text: "吉",
+        img: "https://cdn.pixabay.com/photo/2012/04/10/22/58/star-26940_1280.png",
+        comment: "落ち着いて行動すればきっと大丈夫。焦らずゆっくり進もう！"
+      },
+      {
+        text: "凶",
+        img: "https://cdn.pixabay.com/photo/2013/07/13/12/13/star-146828_1280.png",
+        comment: "無理せず慎重に。こんな日もあるさ！気をつけてね。"
+      }
+    ];
+
+    const btn = document.getElementById('draw-btn');
+    const result = document.getElementById('result');
+    const comment = document.getElementById('comment');
+    const img = document.getElementById('fortune-img');
+    const showstaff = document.getElementById('showstaff');
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+
+    // 初期状態
+    showResult({text:"", img:"", comment:""});
+    img.style.display = "none";
+    result.textContent = "";
+    comment.textContent = "";
+    showstaff.style.visibility = "hidden";
+
+    // シャッフルルーレット
+    let shuffleTimer = null;
+    let shuffleCount = 0;
+    const shuffleMax = 20; // シャッフル回数（多いほどグルグル感）
+
+    btn.onclick = function() {
+      btn.disabled = true;
+      showstaff.style.visibility = "hidden";
+      shuffleCount = 0;
+      img.style.filter = "blur(2px) brightness(1.2)";
+      // シャッフル表示開始
+      shuffleTimer = setInterval(function() {
+        const idx = Math.floor(Math.random() * fortunes.length);
+        showResult(fortunes[idx], true);
+        shuffleCount++;
+        if(shuffleCount > shuffleMax) {
+          clearInterval(shuffleTimer);
+          // ちょっと間を置いて本結果表示
+          setTimeout(function(){
+            const idx = Math.floor(Math.random() * fortunes.length);
+            showResult(fortunes[idx], false);
+            img.style.filter = "none";
+            btn.disabled = false;
+            showstaff.style.visibility = "visible";
+          }, 450);
+        }
+      }, 80);
+    };
+
+    function showResult(f, isShuffle){
+      result.textContent = f.text;
+      img.src = f.img || "";
+      img.style.display = f.img ? "block" : "none";
+      comment.textContent = isShuffle ? "" : f.comment;
+    }
+
+    // フルスクリーン関数
+    function openFullscreen() {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+      } else if (document.documentElement.webkitRequestFullscreen) {
+        document.documentElement.webkitRequestFullscreen();
+      } else if (document.documentElement.msRequestFullscreen) {
+        document.documentElement.msRequestFullscreen();
+      }
+    }
+  </script>
+</body>
+</html>
