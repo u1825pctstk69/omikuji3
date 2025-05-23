@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>おみくじルーレット</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     html, body {
       height: 100%;
@@ -18,8 +19,15 @@
       align-items: center;
       justify-content: center;
     }
+    #top-img {
+      width: 38vw;
+      max-width: 400px;
+      min-width: 160px;
+      margin-bottom: 2vw;
+      display: block;
+    }
     #container {
-      display: flex;
+      display: none; /* 最初は非表示 */
       flex-direction: column;
       align-items: center;
       justify-content: center;
@@ -86,8 +94,10 @@
       color: #ff69b4;
       cursor: pointer;
       font-weight: bold;
+      display: none; /* 常時全画面なら消す */
     }
     @media (max-width:600px) {
+      #top-img { width: 65vw; min-width: 120px; }
       #fortune-img { width: 65vw; min-width: 120px; }
       #result { font-size: 11vw; }
       #comment { font-size: 6vw; }
@@ -97,10 +107,9 @@
   </style>
 </head>
 <body>
-  <!-- ★TOP画像はbody直下、一番上！ -->
-  <img src="omikujitop.jpg" id="top-img" alt="おみくじタイトル画像" style="width:38vw;max-width:400px;min-width:160px;margin-bottom:2vw;">
+  <!-- 最初はTOP画像だけ -->
+  <img src="omikujitop.jpg" id="top-img" alt="おみくじタイトル画像">
 
-  <button id="fullscreen-btn" onclick="openFullscreen()">全画面表示</button>
   <div id="container">
     <div id="result"></div>
     <img id="fortune-img" src="" alt="おみくじ画像" style="display:none;">
@@ -111,72 +120,57 @@
   <script>
     // おみくじデータ
     const fortunes = [
-      {
-        text: "大吉",
-        img: "daikitikuji.jpg",
-        comment: "今日は絶好調！何やってもうまくいく予感♪"
-      },
-      {
-        text: "中吉",
-        img: "chuukitikuji.jpg",
-        comment: "まずまずの運勢。少し背伸びすると良いことあるかも？"
-      },
-      {
-        text: "吉",
-        img: "kitikuji.jpg",
-        comment: "落ち着いて行動すればきっと大丈夫。焦らずゆっくり進もう！"
-      },
-      {
-        text: "凶",
-        img: "kyukuji.jpg",
-        comment: "無理せず慎重に。こんな日もあるさ！気をつけてね。"
-      }
+      { text: "大吉", img: "daikitikuji.jpg", comment: "今日は絶好調！何やってもうまくいく予感♪" },
+      { text: "中吉", img: "chuukitikuji.jpg", comment: "まずまずの運勢。少し背伸びすると良いことあるかも？" },
+      { text: "吉",   img: "kitikuji.jpg",   comment: "落ち着いて行動すればきっと大丈夫。焦らずゆっくり進もう！" },
+      { text: "凶",   img: "kyukuji.jpg",    comment: "無理せず慎重に。こんな日もあるさ！気をつけてね。" }
     ];
 
+    const container = document.getElementById('container');
+    const topImg = document.getElementById('top-img');
     const btn = document.getElementById('draw-btn');
     const result = document.getElementById('result');
     const comment = document.getElementById('comment');
     const img = document.getElementById('fortune-img');
     const showstaff = document.getElementById('showstaff');
-    const fullscreenBtn = document.getElementById('fullscreen-btn');
-    const topImg = document.getElementById('top-img');
 
-    // 初期状態（トップ画像のみ・おみくじ画像非表示）
-    showResult({text:"", img:"", comment:""});
-    img.style.display = "none";
-    result.textContent = "";
-    comment.textContent = "";
-    showstaff.style.visibility = "hidden";
-
-    // フルスクリーン自動化（ユーザーの初回操作でだけ発動するブラウザあり）
+    // 最初はTOP画像だけ（ボタンもcontainerも非表示）
     window.onload = function() {
-      showResult(fortunes[0], false); // TOP画像だけ表示、大吉画像で初期化も可
-      showstaff.style.visibility = "hidden";
+      container.style.display = 'none';
+      topImg.style.display = 'block';
+      // ページロード時に全画面（ブラウザによってはユーザー操作必要な場合あり）
       if (document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen();
       }
     };
 
+    // TOP画像クリックでルーレット開始画面へ
+    topImg.onclick = function() {
+      topImg.style.display = 'none';
+      container.style.display = 'flex';
+      showResult({text:"", img:"", comment:""});
+      img.style.display = "none";
+      result.textContent = "";
+      comment.textContent = "";
+      showstaff.style.visibility = "hidden";
+    };
+
     // シャッフルルーレット
     let shuffleTimer = null;
     let shuffleCount = 0;
-    const shuffleMax = 20; // シャッフル回数
+    const shuffleMax = 20;
 
     btn.onclick = function() {
-      // TOP画像を消す！
-      if (topImg) topImg.style.display = 'none';
       btn.disabled = true;
       showstaff.style.visibility = "hidden";
       shuffleCount = 0;
       img.style.filter = "blur(2px) brightness(1.2)";
-      // シャッフル表示開始
       shuffleTimer = setInterval(function() {
         const idx = Math.floor(Math.random() * fortunes.length);
         showResult(fortunes[idx], true);
         shuffleCount++;
         if(shuffleCount > shuffleMax) {
           clearInterval(shuffleTimer);
-          // ちょっと間を置いて本結果表示
           setTimeout(function(){
             const idx = Math.floor(Math.random() * fortunes.length);
             showResult(fortunes[idx], false);
@@ -193,17 +187,6 @@
       img.src = f.img || "";
       img.style.display = f.img ? "block" : "none";
       comment.textContent = isShuffle ? "" : f.comment;
-    }
-
-    // フルスクリーンボタン（再度押した時用）
-    function openFullscreen() {
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen();
-      } else if (document.documentElement.webkitRequestFullscreen) {
-        document.documentElement.webkitRequestFullscreen();
-      } else if (document.documentElement.msRequestFullscreen) {
-        document.documentElement.msRequestFullscreen();
-      }
     }
   </script>
 </body>
